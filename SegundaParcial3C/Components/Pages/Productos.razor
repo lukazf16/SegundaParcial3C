@@ -1,0 +1,253 @@
+﻿@page "/productos"
+@rendermode InteractiveServer
+
+<div class="d-flex">
+    <!-- Menú lateral -->
+    <div class="bg-dark text-white p-3" style="width: 200px; min-height: 100vh;">
+        <h5>Segunda</h5>
+        <hr />
+        <div class="bg-primary p-2 rounded">Productos</div>
+    </div>
+
+    <!-- Contenido principal -->
+    <div class="p-4 w-100">
+        <h2>Productos</h2>
+
+        <!-- Mensaje de Error -->
+        @if (mensajeError != "")
+        {
+            <div class="alert alert-danger">
+                @mensajeError
+            </div>
+        }
+
+        <!-- Formulario -->
+        <div class="row mb-3">
+            <label class="col-2">Inventario</label>
+            <div class="col-4">
+                <input type="number" class="form-control" @bind="inventarioActual" @bind:event="oninput" />
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <label class="col-2">Nombre</label>
+            <div class="col-4">
+                <input type="text" class="form-control" @bind="nombreActual" @bind:event="oninput" />
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <label class="col-2">Departamento</label>
+            <div class="col-10">
+                <input type="radio" name="depto" value="Frutas"
+                       checked="@(departamentoActual == "Frutas")"
+                       @onchange="@(() => departamentoActual = "Frutas")" /> Frutas &nbsp;
+
+                <input type="radio" name="depto" value="Verduras"
+                       checked="@(departamentoActual == "Verduras")"
+                       @onchange="@(() => departamentoActual = "Verduras")" /> Verduras &nbsp;
+
+                <input type="radio" name="depto" value="Lácteos"
+                       checked="@(departamentoActual == "Lácteos")"
+                       @onchange="@(() => departamentoActual = "Lácteos")" /> Lácteos
+            </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="mb-3">
+            @if (indiceEdicion == -1)
+            {
+                <button class="btn btn-primary" @onclick="Guardar">Guardar</button>
+            }
+            else
+            {
+                <button class="btn btn-primary" @onclick="Actualizar">Actualizar</button>
+                <button class="btn btn-danger" @onclick="Cancelar">Cancelar</button>
+            }
+
+            <button class="btn btn-secondary ms-2" @onclick="ToggleVista">
+                @(verExistencias ? "Listado" : "Existencias")
+            </button>
+        </div>
+
+        <hr />
+
+        <!-- Tablas de visualización -->
+        @if (!verExistencias)
+        {
+            <h5>Listado de productos</h5>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Inventario</th>
+                        <th>Nombre</th>
+                        <th>Departamento</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < totalProductos; i++)
+                    {
+                        // ESTA ES LA LÍNEA MÁGICA QUE SOLUCIONA EL PROBLEMA
+                        int indiceLocal = i;
+
+                        <tr>
+                            <td>@arregloInventarios[indiceLocal]</td>
+                            <td>@arregloNombres[indiceLocal]</td>
+                            <td>@arregloDepartamentos[indiceLocal]</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => Eliminar(indiceLocal)">🗑️</button>
+                                <button class="btn btn-sm btn-outline-dark" @onclick="() => Editar(indiceLocal)">✏️</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <h5>Existencias por departamento</h5>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Frutas</th>
+                        <th>Verduras</th>
+                        <th>Lácteos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        @{
+                            int frutas = 0, verduras = 0, lacteos = 0;
+                            for (int i = 0; i < totalProductos; i++)
+                            {
+                                if (arregloDepartamentos[i] == "Frutas") { frutas++; }
+                                else if (arregloDepartamentos[i] == "Verduras") { verduras++; }
+                                else if (arregloDepartamentos[i] == "Lácteos") { lacteos++; }
+                            }
+                        }
+                        <td>@frutas</td>
+                        <td>@verduras</td>
+                        <td>@lacteos</td>
+                    </tr>
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@code {
+    private int inventarioActual = 0;
+    private string nombreActual = "";
+    private string departamentoActual = "";
+    private string mensajeError = "";
+
+    private int[] arregloInventarios = new int[100];
+    private string[] arregloNombres = new string[100];
+    private string[] arregloDepartamentos = new string[100];
+    private int totalProductos = 0;
+
+    private int indiceEdicion = -1;
+    private bool verExistencias = false;
+
+    private void Guardar()
+    {
+        mensajeError = "";
+
+        if (inventarioActual <= 0)
+        {
+            mensajeError = "El número de inventario debe ser un entero positivo.";
+            return;
+        }
+        if (string.IsNullOrEmpty(nombreActual))
+        {
+            mensajeError = "El nombre no puede ser vacío.";
+            return;
+        }
+        if (string.IsNullOrEmpty(departamentoActual))
+        {
+            mensajeError = "Debe seleccionar un departamento.";
+            return;
+        }
+
+        for (int i = 0; i < totalProductos; i++)
+        {
+            if (arregloInventarios[i] == inventarioActual)
+            {
+                mensajeError = "El número de inventario se encuentra registrado. Debe ser único.";
+                return;
+            }
+        }
+
+        arregloInventarios[totalProductos] = inventarioActual;
+        arregloNombres[totalProductos] = nombreActual;
+        arregloDepartamentos[totalProductos] = departamentoActual;
+        totalProductos++;
+
+        LimpiarFormulario();
+    }
+
+    private void Eliminar(int indice)
+    {
+        for (int i = indice; i < totalProductos - 1; i++)
+        {
+            arregloInventarios[i] = arregloInventarios[i + 1];
+            arregloNombres[i] = arregloNombres[i + 1];
+            arregloDepartamentos[i] = arregloDepartamentos[i + 1];
+        }
+        totalProductos--;
+    }
+
+    private void Editar(int indice)
+    {
+        // Aquí se cargan los datos a las cajas de texto
+        inventarioActual = arregloInventarios[indice];
+        nombreActual = arregloNombres[indice];
+        departamentoActual = arregloDepartamentos[indice];
+        indiceEdicion = indice;
+        mensajeError = "";
+    }
+
+    private void Actualizar()
+    {
+        mensajeError = "";
+
+        if (inventarioActual <= 0) { mensajeError = "El inventario debe ser positivo."; return; }
+        if (string.IsNullOrEmpty(nombreActual)) { mensajeError = "El nombre no puede ser vacío."; return; }
+        if (string.IsNullOrEmpty(departamentoActual)) { mensajeError = "Seleccione un departamento."; return; }
+
+        for (int i = 0; i < totalProductos; i++)
+        {
+            if (arregloInventarios[i] == inventarioActual && i != indiceEdicion)
+            {
+                mensajeError = "El número de inventario se encuentra registrado. Debe ser único.";
+                return;
+            }
+        }
+
+        arregloInventarios[indiceEdicion] = inventarioActual;
+        arregloNombres[indiceEdicion] = nombreActual;
+        arregloDepartamentos[indiceEdicion] = departamentoActual;
+
+        indiceEdicion = -1;
+        LimpiarFormulario();
+    }
+
+    private void Cancelar()
+    {
+        indiceEdicion = -1;
+        LimpiarFormulario();
+    }
+
+    private void ToggleVista()
+    {
+        verExistencias = !verExistencias;
+    }
+
+    private void LimpiarFormulario()
+    {
+        inventarioActual = 0;
+        nombreActual = "";
+        departamentoActual = "";
+    }
+}
