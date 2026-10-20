@@ -13,7 +13,6 @@
     <div class="p-4 w-100">
         <h2>Productos</h2>
 
-        <!-- Mensaje de Error -->
         @if (mensajeError != "")
         {
             <div class="alert alert-danger">
@@ -21,7 +20,6 @@
             </div>
         }
 
-        <!-- Formulario -->
         <div class="row mb-3">
             <label class="col-2">Inventario</label>
             <div class="col-4">
@@ -39,21 +37,20 @@
         <div class="row mb-3">
             <label class="col-2">Departamento</label>
             <div class="col-10">
-                <input type="radio" name="depto" value="Frutas"
-                       checked="@(departamentoActual == "Frutas")"
+                <input type="radio" name="depto" value="Frutas" 
+                       checked="@(departamentoActual == "Frutas")" 
                        @onchange="@(() => departamentoActual = "Frutas")" /> Frutas &nbsp;
-
-                <input type="radio" name="depto" value="Verduras"
-                       checked="@(departamentoActual == "Verduras")"
+                       
+                <input type="radio" name="depto" value="Verduras" 
+                       checked="@(departamentoActual == "Verduras")" 
                        @onchange="@(() => departamentoActual = "Verduras")" /> Verduras &nbsp;
-
-                <input type="radio" name="depto" value="Lácteos"
-                       checked="@(departamentoActual == "Lácteos")"
+                       
+                <input type="radio" name="depto" value="Lácteos" 
+                       checked="@(departamentoActual == "Lácteos")" 
                        @onchange="@(() => departamentoActual = "Lácteos")" /> Lácteos
             </div>
         </div>
 
-        <!-- Botones de acción -->
         <div class="mb-3">
             @if (indiceEdicion == -1)
             {
@@ -64,7 +61,7 @@
                 <button class="btn btn-primary" @onclick="Actualizar">Actualizar</button>
                 <button class="btn btn-danger" @onclick="Cancelar">Cancelar</button>
             }
-
+            
             <button class="btn btn-secondary ms-2" @onclick="ToggleVista">
                 @(verExistencias ? "Listado" : "Existencias")
             </button>
@@ -72,7 +69,6 @@
 
         <hr />
 
-        <!-- Tablas de visualización -->
         @if (!verExistencias)
         {
             <h5>Listado de productos</h5>
@@ -86,15 +82,15 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @for (int i = 0; i < totalProductos; i++)
+                    <!-- Recorremos la colección usando su propiedad .Count -->
+                    @for (int i = 0; i < listaInventarios.Count; i++)
                     {
-                        // ESTA ES LA LÍNEA MÁGICA QUE SOLUCIONA EL PROBLEMA
-                        int indiceLocal = i;
-
+                        int indiceLocal = i; 
+                        
                         <tr>
-                            <td>@arregloInventarios[indiceLocal]</td>
-                            <td>@arregloNombres[indiceLocal]</td>
-                            <td>@arregloDepartamentos[indiceLocal]</td>
+                            <td>@listaInventarios[indiceLocal]</td>
+                            <td>@listaNombres[indiceLocal]</td>
+                            <td>@listaDepartamentos[indiceLocal]</td>
                             <td>
                                 <button class="btn btn-sm btn-outline-danger" @onclick="() => Eliminar(indiceLocal)">🗑️</button>
                                 <button class="btn btn-sm btn-outline-dark" @onclick="() => Editar(indiceLocal)">✏️</button>
@@ -119,11 +115,12 @@
                     <tr>
                         @{
                             int frutas = 0, verduras = 0, lacteos = 0;
-                            for (int i = 0; i < totalProductos; i++)
+                            // Recorremos la colección con foreach (PowerPoint 2)
+                            foreach (var dep in listaDepartamentos)
                             {
-                                if (arregloDepartamentos[i] == "Frutas") { frutas++; }
-                                else if (arregloDepartamentos[i] == "Verduras") { verduras++; }
-                                else if (arregloDepartamentos[i] == "Lácteos") { lacteos++; }
+                                if (dep == "Frutas") { frutas++; }
+                                else if (dep == "Verduras") { verduras++; }
+                                else if (dep == "Lácteos") { lacteos++; }
                             }
                         }
                         <td>@frutas</td>
@@ -141,11 +138,11 @@
     private string nombreActual = "";
     private string departamentoActual = "";
     private string mensajeError = "";
-
-    private int[] arregloInventarios = new int[100];
-    private string[] arregloNombres = new string[100];
-    private string[] arregloDepartamentos = new string[100];
-    private int totalProductos = 0;
+    
+    // AQUÍ ESTÁN LAS COLECCIONES (List) SIN USAR CLASES
+    private List<int> listaInventarios = new List<int>();
+    private List<string> listaNombres = new List<string>();
+    private List<string> listaDepartamentos = new List<string>();
 
     private int indiceEdicion = -1;
     private bool verExistencias = false;
@@ -154,56 +151,41 @@
     {
         mensajeError = "";
 
-        if (inventarioActual <= 0)
-        {
-            mensajeError = "El número de inventario debe ser un entero positivo.";
-            return;
-        }
-        if (string.IsNullOrEmpty(nombreActual))
-        {
-            mensajeError = "El nombre no puede ser vacío.";
-            return;
-        }
-        if (string.IsNullOrEmpty(departamentoActual))
-        {
-            mensajeError = "Debe seleccionar un departamento.";
-            return;
-        }
+        if (inventarioActual <= 0) { mensajeError = "El número de inventario debe ser un entero positivo."; return; }
+        if (string.IsNullOrEmpty(nombreActual)) { mensajeError = "El nombre no puede ser vacío."; return; }
+        if (string.IsNullOrEmpty(departamentoActual)) { mensajeError = "Debe seleccionar un departamento."; return; }
 
-        for (int i = 0; i < totalProductos; i++)
+        // Validar que no se repita usando .Count de la colección
+        for (int i = 0; i < listaInventarios.Count; i++)
         {
-            if (arregloInventarios[i] == inventarioActual)
+            if (listaInventarios[i] == inventarioActual)
             {
                 mensajeError = "El número de inventario se encuentra registrado. Debe ser único.";
                 return;
             }
         }
 
-        arregloInventarios[totalProductos] = inventarioActual;
-        arregloNombres[totalProductos] = nombreActual;
-        arregloDepartamentos[totalProductos] = departamentoActual;
-        totalProductos++;
+        // USO DE MÉTODOS DE COLECCIONES: Add()
+        listaInventarios.Add(inventarioActual);
+        listaNombres.Add(nombreActual);
+        listaDepartamentos.Add(departamentoActual);
 
         LimpiarFormulario();
     }
 
     private void Eliminar(int indice)
     {
-        for (int i = indice; i < totalProductos - 1; i++)
-        {
-            arregloInventarios[i] = arregloInventarios[i + 1];
-            arregloNombres[i] = arregloNombres[i + 1];
-            arregloDepartamentos[i] = arregloDepartamentos[i + 1];
-        }
-        totalProductos--;
+        // USO DE MÉTODOS DE COLECCIONES: RemoveAt()
+        listaInventarios.RemoveAt(indice);
+        listaNombres.RemoveAt(indice);
+        listaDepartamentos.RemoveAt(indice);
     }
 
     private void Editar(int indice)
     {
-        // Aquí se cargan los datos a las cajas de texto
-        inventarioActual = arregloInventarios[indice];
-        nombreActual = arregloNombres[indice];
-        departamentoActual = arregloDepartamentos[indice];
+        inventarioActual = listaInventarios[indice];
+        nombreActual = listaNombres[indice];
+        departamentoActual = listaDepartamentos[indice];
         indiceEdicion = indice;
         mensajeError = "";
     }
@@ -216,18 +198,18 @@
         if (string.IsNullOrEmpty(nombreActual)) { mensajeError = "El nombre no puede ser vacío."; return; }
         if (string.IsNullOrEmpty(departamentoActual)) { mensajeError = "Seleccione un departamento."; return; }
 
-        for (int i = 0; i < totalProductos; i++)
+        for (int i = 0; i < listaInventarios.Count; i++)
         {
-            if (arregloInventarios[i] == inventarioActual && i != indiceEdicion)
+            if (listaInventarios[i] == inventarioActual && i != indiceEdicion)
             {
                 mensajeError = "El número de inventario se encuentra registrado. Debe ser único.";
                 return;
             }
         }
 
-        arregloInventarios[indiceEdicion] = inventarioActual;
-        arregloNombres[indiceEdicion] = nombreActual;
-        arregloDepartamentos[indiceEdicion] = departamentoActual;
+        listaInventarios[indiceEdicion] = inventarioActual;
+        listaNombres[indiceEdicion] = nombreActual;
+        listaDepartamentos[indiceEdicion] = departamentoActual;
 
         indiceEdicion = -1;
         LimpiarFormulario();
